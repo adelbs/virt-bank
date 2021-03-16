@@ -13,7 +13,7 @@ app.use((req, res, next) => {
     next();
 });
 
-
+let backendRunning = true;
 const data = JSON.parse(fs.readFileSync('./data.json').toString());
 const sessions = [];
 
@@ -51,7 +51,8 @@ function saveData() {
 /**
  * Lista todas as contas
  */
-app.post('/contas', (req, res) => {
+app.post('/virtbank/contas', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -68,7 +69,8 @@ app.post('/contas', (req, res) => {
 /**
  * Cria uma conta nova
  */
-app.post('/conta', (req, res) => {
+app.post('/virtbank/conta', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -90,7 +92,8 @@ app.post('/conta', (req, res) => {
 /**
  * Retorna informações de uma conta
  */
-app.post('/conta/:accountNumber', (req, res) => {
+app.post('/virtbank/conta/:accountNumber', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -113,7 +116,8 @@ app.post('/conta/:accountNumber', (req, res) => {
 /**
  * Remove uma conta
  */
-app.delete('/conta/:accountNumber', (req, res) => {
+app.delete('/virtbank/conta/:accountNumber', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -143,7 +147,8 @@ app.delete('/conta/:accountNumber', (req, res) => {
 /**
  * Atualiza uma conta
  */
-app.put('/conta/:accountNumber', (req, res) => {
+app.put('/virtbank/conta/:accountNumber', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -176,7 +181,8 @@ app.put('/conta/:accountNumber', (req, res) => {
 /**
  * Retorna o saldo atual da conta
  */
-app.post('/saldo', (req, res) => {
+app.post('/virtbank/saldo', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -196,7 +202,8 @@ app.post('/saldo', (req, res) => {
 /**
  * Retorna o extrato da conta
  */
-app.post('/extrato', (req, res) => {
+app.post('/virtbank/extrato', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -210,7 +217,8 @@ app.post('/extrato', (req, res) => {
 /**
  * Realiza um deposito na conta
  */
-app.post('/depositar', (req, res) => {
+app.post('/virtbank/depositar', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -243,7 +251,8 @@ app.post('/depositar', (req, res) => {
 /**
  * Realiza um deposito na conta
  */
-app.post('/saque', (req, res) => {
+app.post('/virtbank/saque', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     if (!validateSession(req.body.sessionID)) {
         res.status(401).send({ status: 'Não autorizado' });
     }
@@ -276,8 +285,8 @@ app.post('/saque', (req, res) => {
 /**
  * Faz login e retorna um id de sessao
  */
-app.post('/login', (req, res) => {
-
+app.post('/virtbank/login', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     const foundItem = data.find(item => (item.accountNumber === req.body.accountNumber && item.user.pwd === req.body.pwd));
 
     if (foundItem) {
@@ -297,8 +306,8 @@ app.post('/login', (req, res) => {
 /**
  * Faz logout
  */
-app.post('/logout', (req, res) => {
-
+app.post('/virtbank/logout', (req, res) => {
+    if (!backendRunning) throw new Error('error');
     let foundIndex;
     const foundItem = sessions.find((item, index) => {
         if (item.sessionID === req.body.sessionID) {
@@ -317,6 +326,15 @@ app.post('/logout', (req, res) => {
     }
 });
 
+/**
+ * Para ou sobe o backend
+ */
+app.post('/virtbank/backend', (req, res) => {
+    backendRunning = req.body.run;
+    res.status(200).send({ status: 'Ok' });
+});
+
+app.use('/virtbank', express.static('dist'));
 
 app.listen(port, () => {
     console.log(`Serviço Backend no ar: http://localhost:${port}`);

@@ -4,6 +4,7 @@
             app
             color="orange"
             flat
+            v-if="!showBackend"
         >
 
             <v-tabs
@@ -63,7 +64,10 @@
                                 ></v-progress-circular>
                             </v-overlay>
 
-                            <v-window v-model="activeWindow">
+                            <v-window
+                                v-model="activeWindow"
+                                v-if="!showBackend"
+                            >
 
                                 <v-window-item>
                                     <v-container class="pa-8">
@@ -79,15 +83,17 @@
                                             Em caso de dúvidas, consulte a documentação ou entre em contato com nossa equipe:
                                         </div>
                                         <div class="mt-12 text-center">
-                                            <v-btn
-                                                outlined
-                                                text
-                                                color="primary"
-                                                x-large
-                                                width="40%"
-                                            >
-                                                Confluence
-                                            </v-btn>
+                                            <a href="http://virtualizacaoservicos.itau">
+                                                <v-btn
+                                                    outlined
+                                                    text
+                                                    color="primary"
+                                                    x-large
+                                                    width="40%"
+                                                >
+                                                    Confluence
+                                                </v-btn>
+                                            </a>
                                         </div>
                                         <div class="mt-6 text-center">
                                             <v-btn
@@ -98,6 +104,18 @@
                                                 width="40%"
                                             >
                                                 E-Mail Virtualização
+                                            </v-btn>
+                                        </div>
+                                        <div class="mt-6 text-center">
+                                            <v-btn
+                                                outlined
+                                                text
+                                                color="error"
+                                                x-large
+                                                width="40%"
+                                                @click="showBackend = true"
+                                            >
+                                                Backend
                                             </v-btn>
                                         </div>
                                     </v-container>
@@ -284,6 +302,43 @@
                                     </v-container>
                                 </v-window-item>
                             </v-window>
+                            <v-container v-else>
+                                <v-container class="pa-8">
+                                    <v-card
+                                        class="mx-auto"
+                                        width="320"
+                                        height="100"
+                                    >
+                                        <v-card-text :class="{'text-h4': true, 'text-center': true, 'pt-6': true, 'error--text': !backendRunning, 'success--text': backendRunning}">
+                                            {{backendStatus}}
+                                        </v-card-text>
+                                    </v-card>
+                                    <div class="mt-6 text-center">
+                                        <v-btn
+                                            outlined
+                                            text
+                                            color="primary"
+                                            x-large
+                                            width="40%"
+                                            @click="backendAction()"
+                                        >
+                                            {{nextBackendAction}}
+                                        </v-btn>
+                                    </div>
+                                    <div class="mt-6 text-center">
+                                        <v-btn
+                                            outlined
+                                            text
+                                            color="primary"
+                                            x-large
+                                            width="40%"
+                                            @click="showBackend = false"
+                                        >
+                                            Voltar ao Frontend
+                                        </v-btn>
+                                    </div>
+                                </v-container>
+                            </v-container>
 
                         </v-sheet>
                     </v-col>
@@ -299,10 +354,13 @@ import axios from 'axios';
 
 export default {
     data: () => ({
-        backend: 'http://localhost:8989',
+        loading: false,
+
+        showBackend: false,
+        backendRunning: true,
+        backend: 'http://localhost:8989/virtbank',
 
         activeWindow: 0,
-        loading: false,
         message: {
             text: '',
             color: ''
@@ -342,6 +400,12 @@ export default {
                 values.push(initValue);
             });
             return values;
+        },
+        backendStatus() {
+            return (this.backendRunning ? 'Backend no Ar!' : 'Backend Parado!');
+        },
+        nextBackendAction() {
+            return (this.backendRunning ? 'Parar Backend' : 'Subir Backend');
         }
     },
     watch: {
@@ -433,6 +497,19 @@ export default {
         saveConfig() {
             this.showMessage('Configurações salvas com sucesso!', 'success');
             this.activeWindow = 0;
+        },
+        backendAction() {
+            this.loading = true;
+            setTimeout(() => {
+                axios.post(`/virtbank/backend`, { run: !this.backendRunning }).then(res => {
+                    this.loading = false;
+                    this.backendRunning = !this.backendRunning;
+                }).catch(error => {
+                    this.showMessage(error.message, 'error');
+                    this.loading = false;
+                    this.backendRunning = false;
+                });
+            }, 2000);
         }
     },
     filters: {
